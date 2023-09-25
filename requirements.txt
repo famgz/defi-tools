@@ -1,0 +1,6 @@
+aiohttp
+httpx
+pandas
+requests
+web3
+famgz_utils @ git+https://github.com/famgz/famgz_utils.git@main
