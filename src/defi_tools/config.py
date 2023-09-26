@@ -1,3 +1,4 @@
+import requests
 from famgz_utils import print, input, json_
 from pathlib import Path
 from web3 import Web3
@@ -10,6 +11,8 @@ class Config:
         self._first_run_check()
         self._core_json()
         self._update_wallets()
+        self._load_proxies()
+        self.session = requests.Session()
         self.networks = {  # TODO: implement other uniswapv3 networks
             'mainnet': {'color': '[bright_cyan]'},
             'optimism': {'color': '[bright_red]'},
@@ -23,6 +26,9 @@ class Config:
             'USTC', 'VAI', 'fxUSD', 'USDs', 'cEUR'
         ]
 
+    '''
+    FOLDER AND FILE PATHS
+    '''
     def _core_paths(self):
         ''' Load all paths '''
         # folders paths
@@ -104,7 +110,31 @@ class Config:
             }
             json_(self._path_invest_json, content, indent='\t')
 
+    '''
+    PROXIES
+    '''
+    @property
+    def proxy(self):
+        return self._proxy
 
+    @property
+    def proxies(self):
+        if not self._proxy:
+            return None
+        url = f'http://{self._proxy}'
+        return {
+            "http": url,
+            "https": url,
+        }
+
+    def _load_proxies(self):
+        self._proxy = self.config_json["proxy"]
+        if not self._proxy:  # TODO: validate address format
+            return None
+
+    '''
+    WALLETS
+    '''
     def print_wallet(self, wallet, crop=0, end='\n'):
         if wallet not in self.wallets and wallet != 'track':
             return
@@ -114,10 +144,8 @@ class Config:
             wallet = wallet[:crop]
         print(f'[bright_white]{name} [bright_black]{wallet}', end=end)
 
-
     def print_network(self, network, to_upper=True, end='\n'):
         print(f'{self.networks[network]["color"]}{network.upper() if to_upper else network}', end=end)
-
 
     def validate_address(self, address):
         if not address:
@@ -130,10 +158,8 @@ class Config:
             address = None
         return address
 
-
     def _load_wallets(self):
         return {self.validate_address(x): comment for x, comment in self.config_json['wallets'].items() if self.validate_address(x)}
-
 
     def _update_wallets(self):
         wallets = self._load_wallets()
@@ -142,7 +168,6 @@ class Config:
             self.add_new_wallet()
             wallets = self._load_wallets()
         self.wallets = wallets
-
 
     def add_new_wallet(self):
         while True:

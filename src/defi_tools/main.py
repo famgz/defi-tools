@@ -1,18 +1,19 @@
 import requests
 from copy import deepcopy
 from famgz_utils import (
-    json_,
-    print,
+    clear_cmd_console,
+    clear_last_console_line,
+    countdown,
+    f_time,
     input,
+    json_,
+    now,
+    print,
     rule,
     sort_dict,
-    countdown,
-    clear_last_console_line,
-    clear_cmd_console,
-    now,
-    f_time,
+    timer,
     timestamp_to_date,
-    timer)
+)
 from os import symlink
 from pathlib import Path
 from time import sleep
@@ -35,17 +36,11 @@ headers = {
     'sec-ch-ua-platform': '"Windows"',
 }
 
-ip_ = f'http://{cfg.config_json["proxy"]}'
-proxies = {
-    "http": ip_,
-    "https": ip_,
-}
+proxies = cfg.proxies
+print('[bright_black]proxy: ', cfg.proxy) if cfg.proxies else ...
 proxies = None
-print('[bright_black]', ip_) if proxies else ...
 
 TIMEOUT = 300
-
-_session = requests.Session()
 
 
 def get_own_pools(wallet=None, network=None, pool_id=None, pool_dict=True, to_json=False, sort_by_date=True):
@@ -61,7 +56,7 @@ def get_own_pools(wallet=None, network=None, pool_id=None, pool_dict=True, to_js
             try:
                 # url = f'https://staging-api.revert.finance/v1/positions/{network}/uniswapv3/{pool_id}'
                 url = f'https://api.revert.finance/v1/positions/{network}/uniswapv3/{pool_id}'
-                r = _session.get(url, headers=headers, timeout=TIMEOUT, proxies=proxies, verify=True)
+                r = cfg.session.get(url, headers=headers, timeout=TIMEOUT, proxies=proxies, verify=True)
                 rj = r.json()
                 data = rj['data']
                 if not data.get('tokens'):
@@ -77,14 +72,14 @@ def get_own_pools(wallet=None, network=None, pool_id=None, pool_dict=True, to_js
                 # print(rj)
                 wait = base_wait * (2**i)
                 sleep(min(wait, max_wait))  # exponential wait
-                pass
         json_name = f'own_pools_{network}_{pool_id}.json'
 
     # get all pools
     elif wallet:
+        # url = f'https://api.revert.finance/v1/positions/uniswapv3/account/{wallet}?active=true'
         # url = f'https://staging-api.revert.finance/v1/positions/{network}/uniswapv3/account/{wallet}'
         url = f'https://api.revert.finance/v1/positions/{network}/uniswapv3/account/{wallet}'
-        r = _session.get(url, headers=headers, timeout=TIMEOUT, proxies=proxies, verify=True)
+        r = cfg.session.get(url, headers=headers, timeout=TIMEOUT, proxies=proxies, verify=True)
         rj = r.json()
         if 'data' not in rj:
             print(f'[yellow]{rj}')
