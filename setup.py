@@ -11,6 +11,6 @@ setup(
     author_email='famgz@proton.me',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
-    url='https://github.com/famgz/defi_tools',
+    url='https://github.com/famgz/defi-tools',
     install_requires=REQUIREMENTS
 )
