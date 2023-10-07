@@ -32,31 +32,32 @@ def message():
 
 make_bats()
 
+if __name__ == '__main__':
 
-if len(sys.argv) != 2:
-    message()
-    sys.exit()
+    if len(sys.argv) != 2:
+        message()
+        sys.exit()
 
-args = sys.argv[1].strip()
-opt, *arg = args.split('=')
-arg = arg[0] if arg else None
+    args = sys.argv[1].strip()
+    opt, *arg = args.split('=')
+    arg = arg[0] if arg else None
 
-if opt not in opts:
-    message()
-    sys.exit()
+    if opt not in opts:
+        message()
+        sys.exit()
 
-if opt == 'top_pools':
-    from .main import get_top_pools
-    get_top_pools()
+    if opt == 'top_pools':
+        from .main import get_top_pools
+        get_top_pools()
 
-elif opt == 'own_pools':
-    from .main import parse_own_pools
-    parse_own_pools(include_exited=True, to_json=True)
+    elif opt == 'own_pools':
+        from .main import parse_own_pools
+        parse_own_pools(include_exited=True, to_json=True)
 
-elif opt == 'monitor':
-    from .main import monitor_open_pools
-    monitor_open_pools(include_exited=False)
+    elif opt == 'monitor':
+        from .main import monitor_open_pools
+        monitor_open_pools(include_exited=False)
 
-elif opt == 'alarm':
-    from .alarm import monitor_tick
-    monitor_tick()
+    elif opt == 'alarm':
+        from .alarm import monitor_tick
+        monitor_tick()

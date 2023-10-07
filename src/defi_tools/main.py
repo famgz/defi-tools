@@ -1,4 +1,3 @@
-import requests
 from copy import deepcopy
 from famgz_utils import (
     clear_cmd_console,
@@ -37,8 +36,8 @@ headers = {
 }
 
 proxies = cfg.proxies
-print('[bright_black]proxy: ', cfg.proxy) if cfg.proxies else ...
 proxies = None
+print('[bright_black]proxy: ', cfg.proxy) if proxies else ...
 
 TIMEOUT = 300
 
@@ -76,7 +75,7 @@ def get_own_pools(wallet=None, network=None, pool_id=None, pool_dict=True, to_js
 
     # get all pools
     elif wallet:
-        # url = f'https://api.revert.finance/v1/positions/uniswapv3/account/{wallet}?active=true'
+        # url = f'https://api.revert.finance/v1/positions/uniswapv3/account/{wallet}?active=true'  # <----- new api, fast, complete, all chains. change `active` param to get all/active pools
         # url = f'https://staging-api.revert.finance/v1/positions/{network}/uniswapv3/account/{wallet}'
         url = f'https://api.revert.finance/v1/positions/{network}/uniswapv3/account/{wallet}'
         r = cfg.session.get(url, headers=headers, timeout=TIMEOUT, proxies=proxies, verify=True)

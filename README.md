@@ -1,2 +1,2 @@
-# defi_tools
-A set of tools to monitor DEFI liquidity pools
+# defi-tools
+A set of tools to help monitor DEFI liquidity pools.

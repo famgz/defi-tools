@@ -9,8 +9,9 @@ setup(
     license='MIT',
     author="famgz",
     author_email='famgz@proton.me',
-    packages=find_packages(where='src'),
-    package_dir={'': 'src'},
+    packages=['defi_tools'],
+    package_dir={'defi_tools': 'src/defi_tools'},
+    include_package_data=True,
     url='https://github.com/famgz/defi-tools',
     install_requires=REQUIREMENTS
 )
