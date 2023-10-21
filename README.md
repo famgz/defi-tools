@@ -6,3 +6,18 @@ A set of tools to help monitor DEFI liquidity pools.
 ```
 pip install git+https://github.com/famgz/defi-tools.git
 ```
+
+### Usage
+-----
+```
+# to monitor your own wallet pools
+python -m defi_tools monitor
+
+# to track top trending pools
+python -m defi_tools top_pools
+
+# to set pool range alarm
+python -m defi_tools alarm
+```
+
+![usage](https://raw.githubusercontent.com/famgz/defi-tools/main/screenshots/screenshot.jpg)
