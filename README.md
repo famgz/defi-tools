@@ -19,5 +19,7 @@ python -m defi_tools top_pools
 # to set pool range alarm
 python -m defi_tools alarm
 ```
+---
+![monitor](https://raw.githubusercontent.com/famgz/defi-tools/main/screenshots/monitor.jpg)
 
-![usage](https://raw.githubusercontent.com/famgz/defi-tools/main/screenshots/screenshot1.jpg)
+![top_pools](https://raw.githubusercontent.com/famgz/defi-tools/main/screenshots/top_pools.jpg)

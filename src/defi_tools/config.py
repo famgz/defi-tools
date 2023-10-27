@@ -14,10 +14,10 @@ class Config:
         self._load_proxies()
         self.session = requests.Session()
         self.networks = {  # TODO: implement other uniswapv3 networks
-            'mainnet': {'color': '[bright_cyan]'},
-            'optimism': {'color': '[bright_red]'},
+            # 'mainnet': {'color': '[bright_cyan]'},
+            # 'optimism': {'color': '[bright_red]'},
             'polygon': {'color': '[bright_magenta]'},
-            'arbitrum': {'color': '[bright_blue]'},
+            # 'arbitrum': {'color': '[bright_blue]'},
         }
         self.stablecoins = [
             'BEAN', 'BUSD', 'cUSD', 'DAI', 'DOLA', 'FEI', 'FLEXUSD', 'FRAX',
