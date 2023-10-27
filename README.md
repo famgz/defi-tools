@@ -22,4 +22,4 @@ python -m defi_tools alarm
 ---
 ![monitor](https://raw.githubusercontent.com/famgz/defi-tools/main/screenshots/monitor.jpg)
 
-![top_pools](https://raw.githubusercontent.com/famgz/defi-tools/main/screenshots/top_pools.jpg)
+![top_pools](https://raw.githubusercontent.com/famgz/defi-tools/main/screenshots/top_pools.png)
