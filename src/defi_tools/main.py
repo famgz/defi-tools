@@ -176,12 +176,12 @@ def pool_values(pool):
 
 def pool_age(pool):
     # from timestamp
-    if pool['age'] > 1:
+    if pool['age'] > 1:  # day
         age = round(pool['age'], 1)
         return f'{age}d'
     diff = max(0, now() - pool['first_mint_ts'])
     mint = f_time(None, diff=diff, out='sep')
-    day, hour = mint[0], mint[1]
+    day, hour = mint[2], mint[3]
     age = ' '.join( [x for x in (day, hour) if x] ) or '<1h'
     return age
 
