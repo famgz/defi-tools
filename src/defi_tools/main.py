@@ -281,7 +281,7 @@ def pool_range_bar(pool):
 
     header = f'[bright_black]{"100%":^9}{arrow_down}[white]{round(price_lower,4)}{round(price_upper,4):>{bar_size-len(str(round(price_lower,4)))}}{arrow_down}[bright_black]{"100%":^9}\n'
     bar = f'[bright_black]{t0:^8}{bar}[bright_black]{t1:^8}\n'
-    footer = f'{"":{9+tick_pos}}{arrow_up}[white]{round(price_current,4)}'
+    footer = f'{"":{9+tick_pos}}{arrow_up} [white]{round(price_current,4)}'
     return header + bar + footer
 
 
@@ -348,7 +348,7 @@ def parse_own_pools(include_exited=False, to_json=True):
                 data.setdefault(wallet,{}).setdefault('networks',{}).setdefault(network,{}).setdefault('total_invested',0)
                 data[wallet]['networks'][network]['total_invested'] += float(pool['underlying_value'])  # add up to wallet/network investment
                 data[wallet]['total_invested'] += float(pool['underlying_value'])                       # add up to wallet investment
-    # add track pools here ?
+    # TODO add track pools here ?
     if to_json and data:
         path = Path(cfg.temp_dir, 'own_pools_all.json')
         json_(path, data, backup=True, sort_keys=True, indent='\t')
@@ -440,6 +440,8 @@ def monitor_open_pools(auto=None, include_exited=False):
             print(f'[white]age: [bright_white]{age} [bright_black]{pool_mint_date(pool)}')
 
         def print_tokens():
+            current_value_color = '[cyan]'  # cfg.networks[network]["color"]
+
             total_ini = format_digits(values["invest_ini"])
             total_now = format_digits(values["invest_now"])
             total_now_w_fees = values["invest_now"] + fees['total']
@@ -473,7 +475,7 @@ def monitor_open_pools(auto=None, include_exited=False):
             print(
                 f'[white]tokens:\n'
                 f'  [white]{"MINT":<9}{mint_string}\n'
-                f'  [white]{"CURRENT":<9}$[bright_white]{total_now:>8} [white]{total_diff} +fees: {format_digits(total_now_w_fees)} {total_diff_w_fees}\n'
+                f'  [white]{"CURRENT":<9}${current_value_color}{total_now:>8} [white]{total_diff} +fees: {format_digits(total_now_w_fees)} {total_diff_w_fees}\n'
                 f'  [white]{t0:<10}[bright_white]{t0_now:>8} [white]({t0_percent:>{pad_pct}}) $ {t0_now_usd:>{pad_t_usd}} | 1 {t0:<{pad_t}} = {t0_price_t1_now:>{pad_tt}} {t1:<{pad_t}} = $ {t0_price_usd_now:>{pad_t_price_usd}}\n'
                 f'  [white]{t1:<10}[bright_white]{t1_now:>8} [white]({t1_percent:>{pad_pct}}) $ {t1_now_usd:>{pad_t_usd}} | 1 {t1:<{pad_t}} = {t1_price_t0_now:>{pad_tt}} {t0:<{pad_t}} = $ {t1_price_usd_now:>{pad_t_price_usd}}'
             )
@@ -647,9 +649,9 @@ def compare_values(now, ini, n_digits=2, formatted=False, colored=True):
         color = '[white]'
         plus = ''
         if diff < 0:
-            color = '[bright_red]'
+            color = '[red]'
         if diff > 0:
-            color = '[bright_green]'
+            color = '[green]'
             plus = '+'
         diff = format_digits(diff, n_digits=n_digits) if diff else 0
         color = color if colored else ''
