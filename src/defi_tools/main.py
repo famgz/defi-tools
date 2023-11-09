@@ -266,7 +266,6 @@ def pool_range_bar(pool):
         bar = []
         reached = False
         for i, val in enumerate(vals):
-            # if val >= price_current:
             if price_current < val:
                 if reached:
                     bar.append(symbol_bar_empty)
