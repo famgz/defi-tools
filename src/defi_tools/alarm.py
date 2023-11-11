@@ -1,13 +1,16 @@
 import requests
 import winsound
 from famgz_utils import print, json_, countdown, clear_cmd_console
+from pathlib import Path
 from time import sleep
 
 from .config import cfg
 from .main import compare_values
 
 PLAY_BEEP = 1
-SEND_MESSAGE = 0
+SEND_MESSAGE = 1
+telegram_token = ''
+telegram_chat_id = ''
 
 headers = {
     'authority': 'api.thegraph.com',
@@ -60,9 +63,47 @@ def get_pool_tick(pool_id: str, rj: dict = None):
     return tick
 
 
-def telegram_message(token='', chat_id='', msg='Hello'):
+def get_telegram_tokens():
+    global telegram_token
+    global telegram_chat_id
+    if telegram_token and telegram_chat_id:
+        return
+    path = Path(cfg.config_dir, 'tokens.txt')
+    if not path.exists():
+        print('[yellow]tokens.txt not found. Unable to send telegram message')
+        return
+    with open(Path(cfg.config_dir, 'tokens.txt')) as f:
+        lines = [x.strip() for x in f.readlines() if x.strip()]
+    if not lines:
+        print('[yellow]tokens.txt is empty. Unable to send telegram message')
+        return
+    token = [x.split(' = ')[1].strip() for x in lines if x.startswith('telegram_token')]
+    chat_id = [x.split(' = ')[1].strip() for x in lines if x.startswith('telegram_chat_id')]
+    # TODO needs string validation
+    if not token:
+        print('[yellow]No telegram_token was found in tokens.txt. Unable to send telegram message')
+        return
+    if not chat_id:
+        print('[yellow]No telegram_chat_id was found in tokens.txt. Unable to send telegram message')
+        return
+    telegram_token = token[0]
+    telegram_chat_id = chat_id[0]
+    print(
+        f'telegram_token = {telegram_token}\n'
+        f'telegram_chat_id = {telegram_chat_id}'
+    )
+
+
+def telegram_message(token='', chat_id='', msg='Hello World'):
+    if not (token and chat_id):
+        get_telegram_tokens()
+    token = token or telegram_token
+    chat_id = chat_id or telegram_chat_id
     url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={msg}"
-    requests.get(url)
+    print(url)
+    r = requests.get(url)
+    if not r.ok and 'json' in r.headers['Content-Type']:
+        print(r.json())
 
 
 def play_beep(n=1):
@@ -95,7 +136,7 @@ def monitor_tick():
 
     pool_ids = [alarm['pool_id'] for alarm in alarms]
 
-    interval = 60 * 5  # seconds
+    interval = 60 * 5  # minutes
     while True:
         clear_cmd_console()
         print_headers()
@@ -121,8 +162,10 @@ def monitor_tick():
             if last_tick is None or current_tick == last_tick:
                 # alarm['last_tick'] = current_tick
                 print(f'{name} [white]pool current tick: [bright_white]{round(current_tick,6)}{out_msg_f}')
+                continue
 
-            elif current_tick != last_tick:
+            # tick changed
+            if current_tick != last_tick:
                 diff = compare_values(current_tick, last_tick, n_digits=6, formatted=True)
                 # alarm['last_tick'] = current_tick
                 msg = f'{name} pool tick changed to {round(current_tick,6)} {diff}'
@@ -134,8 +177,3 @@ def monitor_tick():
                         telegram_message(msg=msg + out_msg)
 
         countdown(interval)
-
-
-if __name__ == '__main__':
-    ...
-    # telegram_message()
