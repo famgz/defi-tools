@@ -128,7 +128,7 @@ def monitor_tick():
             print(f'{name} [white]pool [white]min_tick={min_tick} max_tick={max_tick}')
         print()
 
-    alarms = [alarm | {'last_tick': None} for alarm in cfg.config_json['alarm'] if alarm['name'] and cfg.validate_address(alarm['pool_id'])]
+    alarms = [alarm | {'last_tick': None} for alarm in cfg.config_json['alarm'] if alarm['name'] and not alarm['ignore'] and cfg.validate_address(alarm['pool_id'])]
 
     if not alarms:
         print('Not enough data to process. Check config.json')
