@@ -7,6 +7,7 @@ from time import sleep
 from .config import cfg
 from .main import compare_values
 
+CHECK_INTERVAL = 1  # minutes
 PLAY_BEEP = 1
 SEND_MESSAGE = 1
 telegram_token = ''
@@ -136,7 +137,7 @@ def monitor_tick():
 
     pool_ids = [alarm['pool_id'] for alarm in alarms]
 
-    interval = 60 * 5  # minutes
+    interval = 60 * CHECK_INTERVAL  # minutes
     while True:
         clear_cmd_console()
         print_headers()
