@@ -55,11 +55,13 @@ def get_own_pools(wallet=None, network=None, pool_id=None, pool_dict=True, to_js
             try:
                 # url = f'https://staging-api.revert.finance/v1/positions/{network}/uniswapv3/{pool_id}'
                 url = f'https://api.revert.finance/v1/positions/{network}/uniswapv3/{pool_id}'
-                r = cfg.session.get(url, headers=headers, timeout=TIMEOUT, proxies=proxies, verify=True)
+                r = cfg.session.get(
+                    url, headers=headers, timeout=TIMEOUT, proxies=proxies, verify=True)
                 rj = r.json()
                 data = rj['data']
                 if not data.get('tokens'):
-                    print(f'[yellow]Empty pool {network}/{pool_id} data ({i+1})\n', end='\r')
+                    print(
+                        f'[yellow]Empty pool {network}/{pool_id} data ({i+1})\n', end='\r')
                     sleep(1)
                     continue
                 output = {data['nft_id']: data} if pool_dict else data
@@ -78,7 +80,8 @@ def get_own_pools(wallet=None, network=None, pool_id=None, pool_dict=True, to_js
         # url = f'https://api.revert.finance/v1/positions/uniswapv3/account/{wallet}?active=true'  # <----- new api, fast, complete, all chains. change `active` param to get all/active pools
         # url = f'https://staging-api.revert.finance/v1/positions/{network}/uniswapv3/account/{wallet}'
         url = f'https://api.revert.finance/v1/positions/{network}/uniswapv3/account/{wallet}'
-        r = cfg.session.get(url, headers=headers, timeout=TIMEOUT, proxies=proxies, verify=True)
+        r = cfg.session.get(url, headers=headers,
+                            timeout=TIMEOUT, proxies=proxies, verify=True)
         rj = r.json()
         if 'data' not in rj:
             print(f'[yellow]{rj}')
@@ -111,36 +114,48 @@ def pool_pair(pool, formatted=False):
 
 def pool_values(pool):
     # cash-flows references
-    [mint]   = [x for x in pool['cash_flows'] if x['type'] == 'deposits' and x['timestamp'] == pool['first_mint_ts']]
-    [cas]    = [x for x in pool['cash_flows'] if x['type'] == 'current-amount-state']
+    [mint] = [x for x in pool['cash_flows'] if x['type'] ==
+              'deposits' and x['timestamp'] == pool['first_mint_ts']]
+    [cas] = [x for x in pool['cash_flows'] if x['type'] == 'current-amount-state']
     deposits = [x for x in pool['cash_flows'] if x['type'] == 'deposits']
     pool_price = float(pool['pool_price'])
     has_priceless_token = not cas['prices']['token0']['usd'] or not cas['prices']['token1']['usd']
     # prices *fallback to alternative calculated values assuming at least one of tokens has valid price
-    t0_price_usd_ini = float(mint['prices']['token0']['usd']) or float(mint['prices']['token1']['usd']) * mint['price']
-    t1_price_usd_ini = float(mint['prices']['token1']['usd']) or float(mint['prices']['token0']['usd']) / mint['price']
-    t0_price_usd_now = float(cas['prices']['token0']['usd']) or float(cas['prices']['token1']['usd']) * pool_price
-    t1_price_usd_now = float(cas['prices']['token1']['usd']) or float(cas['prices']['token0']['usd']) / pool_price
-    t0_price_t1_ini  = float(mint['prices']['token0']['token1']) or mint['price']                      # 1 t0 = n t1
-    t1_price_t0_ini  = float(mint['prices']['token1']['token0']) or t0_price_usd_ini / mint['price']   # 1 t1 = n t0
-    t0_price_t1_now  = float(cas['prices']['token0']['token1']) or pool_price                          # 1 t0 = n t1
-    t1_price_t0_now  = float(cas['prices']['token1']['token0']) or t1_price_usd_now / t0_price_usd_now # 1 t1 = n t0
+    t0_price_usd_ini = float(mint['prices']['token0']['usd']) or float(
+        mint['prices']['token1']['usd']) * mint['price']
+    t1_price_usd_ini = float(mint['prices']['token1']['usd']) or float(
+        mint['prices']['token0']['usd']) / mint['price']
+    t0_price_usd_now = float(cas['prices']['token0']['usd']) or float(
+        cas['prices']['token1']['usd']) * pool_price
+    t1_price_usd_now = float(cas['prices']['token1']['usd']) or float(
+        cas['prices']['token0']['usd']) / pool_price
+    # 1 t0 = n t1
+    t0_price_t1_ini = float(
+        mint['prices']['token0']['token1']) or mint['price']
+    t1_price_t0_ini = float(mint['prices']['token1']['token0']
+                            ) or t0_price_usd_ini / mint['price']   # 1 t1 = n t0
+    # 1 t0 = n t1
+    t0_price_t1_now = float(cas['prices']['token0']['token1']) or pool_price
+    t1_price_t0_now = float(cas['prices']['token1']['token0']
+                            ) or t1_price_usd_now / t0_price_usd_now  # 1 t1 = n t0
     # amounts
     # t0_ini         = float(pool['total_deposits0'])
     # t1_ini         = float(pool['total_deposits1'])
-    t0_ini         = float(mint['deposited_token0'])
-    t1_ini         = float(mint['deposited_token1'])
-    t0_now         = float(pool['current_amount0'])
-    t1_now         = float(pool['current_amount1'])
+    t0_ini = float(mint['deposited_token0'])
+    t1_ini = float(mint['deposited_token1'])
+    t0_now = float(pool['current_amount0'])
+    t1_now = float(pool['current_amount1'])
     t0_ini_usd_ini = t0_ini * t0_price_usd_ini
     t1_ini_usd_ini = t1_ini * t1_price_usd_ini
     t0_ini_usd_now = t0_ini * t0_price_usd_now
     t1_ini_usd_now = t1_ini * t1_price_usd_now
-    t0_now_usd     = t0_now * t0_price_usd_now
-    t1_now_usd     = t1_now * t1_price_usd_now
-    invest_ini     = t0_ini_usd_ini + t1_ini_usd_ini  # mint exactly value
-    invest_ini_now = t0_ini_usd_now + t1_ini_usd_now  # mint tokens with current value (to exclude fees)
-    invest_now     = t0_now_usd + t1_now_usd if has_priceless_token else float(pool['underlying_value'])
+    t0_now_usd = t0_now * t0_price_usd_now
+    t1_now_usd = t1_now * t1_price_usd_now
+    invest_ini = t0_ini_usd_ini + t1_ini_usd_ini  # mint exactly value
+    # mint tokens with current value (to exclude fees)
+    invest_ini_now = t0_ini_usd_now + t1_ini_usd_now
+    invest_now = t0_now_usd + \
+        t1_now_usd if has_priceless_token else float(pool['underlying_value'])
     t0_percent_ini = t0_ini_usd_ini / invest_ini if invest_ini else 0
     t1_percent_ini = t1_ini_usd_ini / invest_ini if invest_ini else 0
     t0_percent = t0_now_usd / invest_now if invest_now else 0
@@ -182,12 +197,12 @@ def pool_age(pool):
     diff = max(0, now() - pool['first_mint_ts'])
     mint = f_time(None, diff=diff, out='sep')
     day, hour = mint[2], mint[3]
-    age = ' '.join( [x for x in (day, hour) if x] ) or '<1h'
+    age = ' '.join([x for x in (day, hour) if x]) or '<1h'
     return age
 
     # from age string
     mint = float(pool['age'])
-    day, hour = mint//1, mint%1
+    day, hour = mint//1, mint % 1
     day = f'{day}d ' if day else ''
     hour = f'{hour} h' if hour else ''
     return day + hour
@@ -223,20 +238,20 @@ def pool_range_bar(pool):
 
     t0, t1 = pool_pair(pool)
     price_current = float(pool['pool_price'])
-    price_lower   = float(pool['price_lower'])
-    price_upper   = float(pool['price_upper'])
+    price_lower = float(pool['price_lower'])
+    price_upper = float(pool['price_upper'])
 
     range_scope = pool_range_scope(pool)
 
     # █ ▌ ▐
-    symbol_bar_empty     = '█'
-    symbol_bar_full     = '█'
-    symbol_tick     = '█'
-    symbol_edge_r  = '▌'
-    symbol_edge_l  = '▐'
-    color_limit    = '[white]'
-    color_back     = '[bright_black]'
-    color_tick_in  = '[bright_green]'
+    symbol_bar_empty = '█'
+    symbol_bar_full = '█'
+    symbol_tick = '█'
+    symbol_edge_r = '▌'
+    symbol_edge_l = '▐'
+    color_limit = '[white]'
+    color_back = '[bright_black]'
+    color_tick_in = '[bright_green]'
     color_tick_out = '[bright_red]'
 
     bar_size = 50
@@ -247,7 +262,7 @@ def pool_range_bar(pool):
     bar_empty = symbol_bar_empty * bar_size
     bar_full = symbol_bar_full * bar_size
 
-    arrow_up   = '[bright_black]▲'
+    arrow_up = '[bright_black]▲'
     arrow_down = '[bright_black]▼'
 
     tick_pos = 0
@@ -290,8 +305,8 @@ def pool_fee_tier(pool):
 
 def pool_gas(pool):
     gas_costs = [x for x in pool['cash_flows'] if x['type'] == 'gas-costs']
-    gas     = sum( [abs(float(x['amount']))     for x in gas_costs] )
-    gas_usd = sum( [abs(float(x['amount_usd'])) for x in gas_costs] )
+    gas = sum([abs(float(x['amount'])) for x in gas_costs])
+    gas_usd = sum([abs(float(x['amount_usd'])) for x in gas_costs])
     return {
         'gas': gas,
         'gas_usd': gas_usd,
@@ -301,7 +316,8 @@ def pool_gas(pool):
 def pool_fees(pool, values):
     t0 = float(pool['total_fees0'])
     t1 = float(pool['total_fees1'])
-    total = (t0 * values['t0_price_usd_now']) + (t1 * values['t1_price_usd_now']) if values['has_priceless_token'] else float(pool['fees_value'])
+    total = (t0 * values['t0_price_usd_now']) + (t1 * values['t1_price_usd_now']
+                                                 ) if values['has_priceless_token'] else float(pool['fees_value'])
     return {
         'total': total,
         't0':    t0,
@@ -311,10 +327,12 @@ def pool_fees(pool, values):
 
 def pool_roi(pool, consider_mint_original_value=False):
     if consider_mint_original_value:
-        roi = fees['total'] / values['invest_ini'] if values['invest_ini'] else 0
+        roi = fees['total'] / \
+            values['invest_ini'] if values['invest_ini'] else 0
     # consider mint tokens with current value
     else:
-        roi = fees['total'] / values['invest_ini_now'] if values['invest_ini_now'] else 0
+        roi = fees['total'] / \
+            values['invest_ini_now'] if values['invest_ini_now'] else 0
     age = float(pool['age'])
     per_day = roi / age if age else roi
     per_week = per_day * 7
@@ -333,20 +351,29 @@ def parse_own_pools(include_exited=False, to_json=True):
     data = {}
     print('\n[white]Searching...', end='')
     for wallet in cfg.wallets:
-        print(f'\n[white][bright_white]{cfg.wallets[wallet]:<10} [white]wallet on networks:', end=' ')
+        print(
+            f'\n[white][bright_white]{cfg.wallets[wallet]:<10} [white]wallet on networks:', end=' ')
         for network in cfg.networks:
-            pools = get_own_pools(network=network, wallet=wallet, to_json=False)
-            pools = {pool_id: pool for pool_id, pool in pools.items() if (include_exited or not pool['exited']) and pool_id not in cfg.config_json['ignore'][network]}  # ignore exited pools as desired
+            pools = get_own_pools(
+                network=network, wallet=wallet, to_json=False)
+            pools = {pool_id: pool for pool_id, pool in pools.items() if (
+                include_exited or not pool['exited']) and pool_id not in cfg.config_json['ignore'][network]}  # ignore exited pools as desired
             if not pools:
                 print(f'[bright_black]{network}', end=' ')
                 continue
             cfg.print_network(network, to_upper=False, end=' ')
             for pool_id, pool in pools.items():
-                data.setdefault(wallet,{}).setdefault('networks',{}).setdefault(network,{}).setdefault('pools',{})[pool_id] = pool
-                data.setdefault(wallet,{}).setdefault('total_invested',0)
-                data.setdefault(wallet,{}).setdefault('networks',{}).setdefault(network,{}).setdefault('total_invested',0)
-                data[wallet]['networks'][network]['total_invested'] += float(pool['underlying_value'])  # add up to wallet/network investment
-                data[wallet]['total_invested'] += float(pool['underlying_value'])                       # add up to wallet investment
+                data.setdefault(wallet, {}).setdefault('networks', {}).setdefault(
+                    network, {}).setdefault('pools', {})[pool_id] = pool
+                data.setdefault(wallet, {}).setdefault('total_invested', 0)
+                data.setdefault(wallet, {}).setdefault('networks', {}).setdefault(
+                    network, {}).setdefault('total_invested', 0)
+                # add up to wallet/network investment
+                data[wallet]['networks'][network]['total_invested'] += float(
+                    pool['underlying_value'])
+                # add up to wallet investment
+                data[wallet]['total_invested'] += float(
+                    pool['underlying_value'])
     # TODO add track pools here ?
     if to_json and data:
         path = Path(cfg.temp_dir, 'own_pools_all.json')
@@ -403,8 +430,10 @@ def monitor_open_pools(auto=None, include_exited=False):
             for pool_id in pool_ids:
                 if pool_id not in pools_in_wallets[network]:
                     print(network, pool_id)
-                    pool = get_own_pools(network=network, pool_id=pool_id, pool_dict=False, to_json=False)
-                    data.setdefault('track',{}).setdefault('networks',{}).setdefault(network,{}).setdefault('pools',{})[pool_id] = pool
+                    pool = get_own_pools(
+                        network=network, pool_id=pool_id, pool_dict=False, to_json=False)
+                    data.setdefault('track', {}).setdefault('networks', {}).setdefault(
+                        network, {}).setdefault('pools', {})[pool_id] = pool
 
     def first_stats(data):
         ref = data
@@ -414,15 +443,21 @@ def monitor_open_pools(auto=None, include_exited=False):
                 pools = n['pools']
                 for pool_id, pool in pools.items():
                     values = pool_values(pool)
-                    pool.update(first_fees=pool_fees(pool, values))  # record first fees
+                    pool.update(first_fees=pool_fees(
+                        pool, values))  # record first fees
         return ref
-
 
     def print_stats(pool):
 
+        def pool_address(pool):
+            return pool['pool']
+
         def print_header():
             print()
-            rule(f' {cfg.networks[network]["color"]}{pool_pair(pool, formatted=True)}[/] {format_to_percent(tier)} [bright_black]({pool_id}) ', style='bright_black')
+            rule(
+                f' {cfg.networks[network]["color"]}{pool_pair(pool, formatted=True)}[/] {format_to_percent(tier)} [bright_black]({pool_id}) ', style='bright_black')
+            rule(f' [bright_black]{address} ',
+                 style='bright_black', characters=' ')
 
         def print_range():
             in_range = pool['in_range']
@@ -436,7 +471,8 @@ def monitor_open_pools(auto=None, include_exited=False):
             )
 
         def print_age():
-            print(f'[white]age: [bright_white]{age} [bright_black]{pool_mint_date(pool)}')
+            print(
+                f'[white]age: [bright_white]{age} [bright_black]{pool_mint_date(pool)}')
 
         def print_tokens():
             current_value_color = '[cyan]'  # cfg.networks[network]["color"]
@@ -444,22 +480,32 @@ def monitor_open_pools(auto=None, include_exited=False):
             total_ini = format_digits(values["invest_ini"])
             total_now = format_digits(values["invest_now"])
             total_now_w_fees = values["invest_now"] + fees['total']
-            total_diff = compare_values(total_now, total_ini, formatted=True, colored=False)
-            total_diff_w_fees = compare_values(total_now_w_fees, total_ini, formatted=True, colored=False)
+            total_diff = compare_values(
+                total_now, total_ini, formatted=True, colored=False)
+            total_diff_w_fees = compare_values(
+                total_now_w_fees, total_ini, formatted=True, colored=False)
             t0_ini = format_digits(values["t0_ini"])
             t1_ini = format_digits(values["t1_ini"])
             t0_now = format_digits(values["t0_now"])
             t1_now = format_digits(values["t1_now"])
             t0_now_usd = format_digits(values["t0_now_usd"])
             t1_now_usd = format_digits(values["t1_now_usd"])
-            t0_price_usd_ini = format_digits(values["t0_price_usd_ini"], n_digits=4)
-            t1_price_usd_ini = format_digits(values["t1_price_usd_ini"], n_digits=4)
-            t0_price_usd_now = format_digits(values["t0_price_usd_now"], n_digits=4)
-            t1_price_usd_now = format_digits(values["t1_price_usd_now"], n_digits=4)
-            t0_price_t1_now = format_digits(values["t0_price_t1_now"], n_digits=4)
-            t1_price_t0_now = format_digits(values["t1_price_t0_now"], n_digits=4)
-            t0_percent_ini = format_to_percent(values["t0_percent_ini"], n_digits=None)
-            t1_percent_ini = format_to_percent(values["t1_percent_ini"], n_digits=None)
+            t0_price_usd_ini = format_digits(
+                values["t0_price_usd_ini"], n_digits=4)
+            t1_price_usd_ini = format_digits(
+                values["t1_price_usd_ini"], n_digits=4)
+            t0_price_usd_now = format_digits(
+                values["t0_price_usd_now"], n_digits=4)
+            t1_price_usd_now = format_digits(
+                values["t1_price_usd_now"], n_digits=4)
+            t0_price_t1_now = format_digits(
+                values["t0_price_t1_now"], n_digits=4)
+            t1_price_t0_now = format_digits(
+                values["t1_price_t0_now"], n_digits=4)
+            t0_percent_ini = format_to_percent(
+                values["t0_percent_ini"], n_digits=None)
+            t1_percent_ini = format_to_percent(
+                values["t1_percent_ini"], n_digits=None)
             t0_percent = format_to_percent(values["t0_percent"], n_digits=None)
             t1_percent = format_to_percent(values["t1_percent"], n_digits=None)
 
@@ -484,11 +530,14 @@ def monitor_open_pools(auto=None, include_exited=False):
             n_short = 2
             n_long = 4
             total = format_digits(fees['total'], n_digits=n_dol)
-            total_diff = compare_values(fees['total'], first_fees['total'], n_digits=n_dol, formatted=True)
+            total_diff = compare_values(
+                fees['total'], first_fees['total'], n_digits=n_dol, formatted=True)
             t0_fee = format_digits(fees['t0'], n_digits=2)
             t1_fee = format_digits(fees['t1'], n_digits=2)
-            t0_diff = compare_values(fees['t0'], first_fees['t0'], n_digits=4, formatted=True)
-            t1_diff = compare_values(fees['t1'], first_fees['t1'], n_digits=4, formatted=True)
+            t0_diff = compare_values(
+                fees['t0'], first_fees['t0'], n_digits=4, formatted=True)
+            t1_diff = compare_values(
+                fees['t1'], first_fees['t1'], n_digits=4, formatted=True)
             print(
                 f'[white]fees:\n'
                 f'  [white]{"TOTAL":<9}$[bright_white]{total:>8} {total_diff}\n'
@@ -512,6 +561,7 @@ def monitor_open_pools(auto=None, include_exited=False):
 
         global t0, t1, tier, age, values, fees
 
+        address = pool_address(pool)
         t0, t1 = pool_pair(pool)
         tier = pool_fee_tier(pool)
         age = pool_age(pool)
@@ -555,13 +605,14 @@ def monitor_open_pools(auto=None, include_exited=False):
             for wallet in new:
                 new[wallet]['total_invested'] = 0
                 networks = new[wallet]['networks']
-                for network, n in networks.items():
+                for network, data in networks.items():
                     networks[network]['total_invested'] = 0
-                    pools = n['pools']
+                    pools = data['pools']
                     for pool_id, pool in pools.items():
                         # udpate pool
                         if not first_access:
-                            pool = get_own_pools(network=network, pool_id=pool_id, pool_dict=False, to_json=False)
+                            pool = get_own_pools(
+                                network=network, pool_id=pool_id, pool_dict=False, to_json=False)
                         networks[network]['pools'][pool_id] = pool
                         # update total values
                         value = float(pool['underlying_value'])
@@ -580,12 +631,12 @@ def monitor_open_pools(auto=None, include_exited=False):
                 value = format_digits(new[wallet]['total_invested'])
                 print(f'[white]$ {value}')
                 networks = new[wallet]['networks']
-                for network, n in networks.items():
+                for network, data in networks.items():
                     print()
                     cfg.print_network(network)
-                    value = format_digits(n['total_invested'])
+                    value = format_digits(data['total_invested'])
                     print(f'[white]$ {value}')
-                    pools = n['pools']
+                    pools = data['pools']
                     for pool_id, pool in pools.items():
                         first_fees = ini[wallet]['networks'][network]['pools'][pool_id]['first_fees']
                         print_stats(pool)
@@ -634,8 +685,8 @@ def convert_text_to_digit(string: str):
         'm': 1000000,
         'b': 1000000000,
     }
-    digits = "".join( [x for x in string if x.isdigit() or x == '.'] )
-    suffix = "".join( [x for x in string if     x.isalpha()] )
+    digits = "".join([x for x in string if x.isdigit() or x == '.'])
+    suffix = "".join([x for x in string if x.isalpha()])
     value = float(digits) * multps.get(suffix, 1)
     return value
 
@@ -662,7 +713,7 @@ def n_stables(pair):
     stables = [x.upper() for x in cfg.stablecoins]
     pair = pair.upper()
     t0, t1 = pair.split('/')
-    return sum( [1 for x in (t0, t1) if x.strip() in stables] )
+    return sum([1 for x in (t0, t1) if x.strip() in stables])
 
 
 def get_top_pools():
@@ -700,7 +751,7 @@ def get_top_pools():
         df.to_excel(writer, sheet_name='pools', index=False)
 
         # Get the xlsxwriter workbook and worksheet objects.
-        workbook  = writer.book
+        workbook = writer.book
         worksheet = writer.sheets['pools']
 
         # Get the dimensions of the dataframe.
@@ -733,20 +784,22 @@ def get_top_pools():
         with open(path) as f:
             file = f.read()
             file = file.replace('token logo', '')
-            lines = [x.strip() for x in file.split('\n') if x.strip() and not x.strip().isdigit()]
+            lines = [x.strip() for x in file.split(
+                '\n') if x.strip() and not x.strip().isdigit()]
             lines = [lines[i:i+5] for i in range(0, len(lines), 5)]
-            assert not any( [x for x in lines if len(x) != 5] )
+            assert not any([x for x in lines if len(x) != 5])
             return lines
 
     def parse_pools():
         pools = []
         for pair, tier, tvl, vol_24h, vol_7d in lines:
             _percent = reverse_from_percent(tier)
-            _tvl      = convert_text_to_digit(tvl)
-            _vol_24h  = convert_text_to_digit(vol_24h)  # biased, ignored
-            _vol_7d   = convert_text_to_digit(vol_7d)
+            _tvl = convert_text_to_digit(tvl)
+            _vol_24h = convert_text_to_digit(vol_24h)  # biased, ignored
+            _vol_7d = convert_text_to_digit(vol_7d)
             ratio_7d_tvl = round(_vol_7d / _tvl, 2)
-            mean_vol_24h  = _vol_7d / 7  # volume per day based on 7 days volume for accuracy matters
+            # volume per day based on 7 days volume for accuracy matters
+            mean_vol_24h = _vol_7d / 7
             yield_1d = mean_vol_24h * _percent  # daily yield distributed to participants
             percent_1d = yield_1d / _tvl
             percent_1m = percent_1d * 30
@@ -778,14 +831,16 @@ def get_top_pools():
         pad1 = 14
         pad2 = 9
         print('[white]Percentages are mere estimates based on average weekly volume\n')
-        print(f"[bright_yellow]{'PAIR':<{pad1}}{'TIER':<6}{'%1D':>{pad2}}{'%1M':>{pad2}}{'%1Y↓':>{pad2}}")
+        print(
+            f"[bright_yellow]{'PAIR':<{pad1}}{'TIER':<6}{'%1D':>{pad2}}{'%1M':>{pad2}}{'%1Y↓':>{pad2}}")
         for pool in pools_:
             pair = pool['pair']
             tier = pool['tier']
             percent_1d = format_to_percent(pool['percent_1d'])
             percent_1m = format_to_percent(pool['percent_1m'])
             percent_1y = format_to_percent(pool['percent_1y'])
-            print(f"{pair:<{pad1}}[white]{tier:<6}{percent_1d:>{pad2}}{percent_1m:>{pad2}}{percent_1y:>{pad2}}")
+            print(
+                f"{pair:<{pad1}}[white]{tier:<6}{percent_1d:>{pad2}}{percent_1m:>{pad2}}{percent_1y:>{pad2}}")
 
     lines = read_file()
 

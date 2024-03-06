@@ -49,8 +49,8 @@ def get_pool(pool_ids: list):
         try:
             r = requests.post(
                 'https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-polygon', headers=headers, json=json_data)
+            r.raise_for_status()
             rj = r.json()
-            # json_('C://Users//GOOZ//Desktop//0x1aec019d1a0e3a024fef822a5728940c1d12dcbe.json', rj)
             return rj
         except Exception as e:
             print(f'[yellow]Error: {e} ({i+1})')
