@@ -34,6 +34,8 @@ headers = {
 def get_pool(pool_ids: list):
     if not pool_ids:
         return
+    if isinstance(pool_ids, str):
+        pool_ids = [pool_ids]
 
     pool_ids = str(pool_ids).replace("'", '"')
     json_data = {
