@@ -7,7 +7,7 @@ from time import sleep
 from .config import cfg
 from .main import compare_values
 
-CHECK_INTERVAL = 1  # minutes
+CHECK_INTERVAL = 10  # minutes
 PLAY_BEEP = 1
 SEND_MESSAGE = 1
 telegram_token = ''
@@ -47,7 +47,8 @@ def get_pool(pool_ids: list):
     max_wait = 60
     for i in range(tries):
         try:
-            r = requests.post('https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-polygon', headers=headers, json=json_data)
+            r = requests.post(
+                'https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-polygon', headers=headers, json=json_data)
             rj = r.json()
             # json_('C://Users//GOOZ//Desktop//0x1aec019d1a0e3a024fef822a5728940c1d12dcbe.json', rj)
             return rj
@@ -78,14 +79,18 @@ def get_telegram_tokens():
     if not lines:
         print('[yellow]tokens.txt is empty. Unable to send telegram message')
         return
-    token = [x.split(' = ')[1].strip() for x in lines if x.startswith('telegram_token')]
-    chat_id = [x.split(' = ')[1].strip() for x in lines if x.startswith('telegram_chat_id')]
+    token = [x.split(' = ')[1].strip()
+             for x in lines if x.startswith('telegram_token')]
+    chat_id = [x.split(' = ')[1].strip()
+               for x in lines if x.startswith('telegram_chat_id')]
     # TODO needs string validation
     if not token:
-        print('[yellow]No telegram_token was found in tokens.txt. Unable to send telegram message')
+        print(
+            '[yellow]No telegram_token was found in tokens.txt. Unable to send telegram message')
         return
     if not chat_id:
-        print('[yellow]No telegram_chat_id was found in tokens.txt. Unable to send telegram message')
+        print(
+            '[yellow]No telegram_chat_id was found in tokens.txt. Unable to send telegram message')
         return
     telegram_token = token[0]
     telegram_chat_id = chat_id[0]
@@ -112,8 +117,9 @@ def play_beep(n=1):
     n = min(n, 5)
     for i in range(n):
         # winsound.MessageBeep()
-        winsound.PlaySound("C:\\Windows\\Media\\Ring03.wav", winsound.SND_FILENAME)
-        if i==n:
+        winsound.PlaySound("C:\\Windows\\Media\\Ring03.wav",
+                           winsound.SND_FILENAME)
+        if i == n:
             break
         # sleep(5)
 
@@ -123,13 +129,15 @@ def monitor_tick():
     def print_headers():
         print('POOLS ALARMS\n')
         for alarm in alarms:
-            name     = alarm['name']
+            name = alarm['name']
             min_tick = float(alarm['min_tick'])
             max_tick = float(alarm['max_tick'])
-            print(f'{name} [white]pool [white]min_tick={min_tick} max_tick={max_tick}')
+            print(
+                f'{name} [white]pool [white]min_tick={min_tick} max_tick={max_tick}')
         print()
 
-    alarms = [alarm | {'last_tick': None} for alarm in cfg.config_json['alarm'] if alarm['name'] and not alarm['ignore'] and cfg.validate_address(alarm['pool_id'])]
+    alarms = [alarm | {'last_tick': None} for alarm in cfg.config_json['alarm']
+              if alarm['name'] and not alarm['ignore'] and cfg.validate_address(alarm['pool_id'])]
 
     if not alarms:
         print('Not enough data to process. Check config.json')
@@ -146,8 +154,8 @@ def monitor_tick():
         rj = get_pool(pool_ids)
 
         for alarm in alarms:
-            name     = alarm['name']
-            pool_id  = alarm['pool_id']
+            name = alarm['name']
+            pool_id = alarm['pool_id']
             min_tick = float(alarm['min_tick'])
             max_tick = float(alarm['max_tick'])
             last_tick = alarm['last_tick']
@@ -162,12 +170,14 @@ def monitor_tick():
             # first access or no changes
             if last_tick is None or current_tick == last_tick:
                 # alarm['last_tick'] = current_tick
-                print(f'{name} [white]pool current tick: [bright_white]{round(current_tick,6)}{out_msg_f}')
+                print(
+                    f'{name} [white]pool current tick: [bright_white]{round(current_tick,6)}{out_msg_f}')
                 continue
 
             # tick changed
             if current_tick != last_tick:
-                diff = compare_values(current_tick, last_tick, n_digits=6, formatted=True)
+                diff = compare_values(
+                    current_tick, last_tick, n_digits=6, formatted=True)
                 # alarm['last_tick'] = current_tick
                 msg = f'{name} pool tick changed to {round(current_tick,6)} {diff}'
                 print(f'[white]{msg}{out_msg_f}')
