@@ -5,7 +5,7 @@ from pathlib import Path
 from time import sleep
 
 from .config import cfg
-from .main import compare_values
+from .main import compare_values, get_own_pools
 
 CHECK_INTERVAL = 10  # minutes
 PLAY_BEEP = 1
@@ -31,17 +31,19 @@ headers = {
 }
 
 
-def get_pool(pool_ids: list):
-    if not pool_ids:
+def get_pools_from_subgraph(pool_addresses: list):
+    if not pool_addresses:
         return
-    if isinstance(pool_ids, str):
-        pool_ids = [pool_ids]
+    if isinstance(pool_addresses, str):
+        pool_addresses = [pool_addresses]
 
-    pool_ids = str(pool_ids).replace("'", '"')
+    pool_addresses = [
+        address for address in pool_addresses if address.startswith('0x')]
+    pool_addresses = str(pool_addresses).replace("'", '"')
     json_data = {
         'operationName': 'pools',
         'variables': {},
-        'query': 'query pools {\n  pools(\n    where: {id_in: %s}\n    orderBy: totalValueLockedUSD\n    orderDirection: desc\n    subgraphError: allow\n  ) {\n    id\n    feeTier\n    liquidity\n    sqrtPrice\n    tick\n    token0 {\n      id\n      symbol\n      name\n      decimals\n      derivedETH\n      __typename\n    }\n    token1 {\n      id\n      symbol\n      name\n      decimals\n      derivedETH\n      __typename\n    }\n    poolDayData(first: 95, orderBy: date, orderDirection: desc) {\n      txCount\n      volumeUSD\n      liquidity\n      feesUSD\n      volumeToken0\n      token1Price\n      __typename\n    }\n    token0Price\n    token1Price\n    volumeUSD\n    txCount\n    totalValueLockedToken0\n    totalValueLockedToken1\n    totalValueLockedUSD\n    feesUSD\n    __typename\n  }\n}\n' % pool_ids,
+        'query': 'query pools {\n  pools(\n    where: {id_in: %s}\n    orderBy: totalValueLockedUSD\n    orderDirection: desc\n    subgraphError: allow\n  ) {\n    id\n    feeTier\n    liquidity\n    sqrtPrice\n    tick\n    token0 {\n      id\n      symbol\n      name\n      decimals\n      derivedETH\n      __typename\n    }\n    token1 {\n      id\n      symbol\n      name\n      decimals\n      derivedETH\n      __typename\n    }\n    poolDayData(first: 95, orderBy: date, orderDirection: desc) {\n      txCount\n      volumeUSD\n      liquidity\n      feesUSD\n      volumeToken0\n      token1Price\n      __typename\n    }\n    token0Price\n    token1Price\n    volumeUSD\n    txCount\n    totalValueLockedToken0\n    totalValueLockedToken1\n    totalValueLockedUSD\n    feesUSD\n    __typename\n  }\n}\n' % pool_addresses,
     }
 
     tries = 5
@@ -60,11 +62,24 @@ def get_pool(pool_ids: list):
             sleep(min(wait, max_wait))
 
 
-def get_pool_tick(pool_id: str, rj: dict = None):
-    rj = rj or get_pool([pool_id])
-    [pool] = [pool for pool in rj['data']['pools'] if pool['id'] == pool_id]
+def get_pool_tick_from_subgraph(pool_address: str, rj: dict = None):
+    rj = rj or get_pools_from_subgraph([pool_address])
+    [pool] = [pool for pool in rj['data']['pools'] if pool['id'] == pool_address]
     tick = float(pool['token1Price'])
     return tick
+
+
+def get_pool_tick_from_revert(pool_id: str):
+    rj = get_own_pools(network='polygon', pool_id=pool_id)
+    for data in rj.values():
+        tick = data['pool_price']
+        return float(tick)
+
+
+def get_pool_tick(pool_id_or_address: str, rj: dict):
+    if pool_id_or_address.startswith('0x'):
+        return get_pool_tick_from_subgraph(pool_id_or_address, rj)
+    return get_pool_tick_from_revert(pool_id_or_address)
 
 
 def get_telegram_tokens():
@@ -85,7 +100,7 @@ def get_telegram_tokens():
              for x in lines if x.startswith('telegram_token')]
     chat_id = [x.split(' = ')[1].strip()
                for x in lines if x.startswith('telegram_chat_id')]
-    # TODO needs string validation
+    # TODO: needs string validation
     if not token:
         print(
             '[yellow]No telegram_token was found in tokens.txt. Unable to send telegram message')
@@ -115,7 +130,7 @@ def telegram_message(token='', chat_id='', msg='Hello World'):
 
 
 def play_beep(n=1):
-    '''TODO: to find a cross plataform sound solution'''
+    # TODO: to find a cross plataform sound solution
     n = min(n, 5)
     for i in range(n):
         # winsound.MessageBeep()
@@ -139,13 +154,13 @@ def monitor_tick():
         print()
 
     alarms = [alarm | {'last_tick': None} for alarm in cfg.config_json['alarm']
-              if alarm['name'] and not alarm['ignore'] and cfg.validate_address(alarm['pool_id'])]
+              if alarm['name'] and not alarm['ignore'] and ((alarm['pool_address'] and cfg.validate_address(alarm['pool_address'])) or alarm['pool_id'])]
 
     if not alarms:
         print('Not enough data to process. Check config.json')
         return
 
-    pool_ids = [alarm['pool_id'] for alarm in alarms]
+    pool_ids = [alarm['pool_id'] or alarm['pool_address'] for alarm in alarms]
 
     interval = 60 * CHECK_INTERVAL  # minutes
     while True:
@@ -153,16 +168,17 @@ def monitor_tick():
         print_headers()
 
         # update data for pool_ids altogether
-        rj = get_pool(pool_ids)
+        rj = get_pools_from_subgraph(pool_ids)
 
         for alarm in alarms:
             name = alarm['name']
             pool_id = alarm['pool_id']
+            pool_address = alarm['pool_address']
             min_tick = float(alarm['min_tick'])
             max_tick = float(alarm['max_tick'])
             last_tick = alarm['last_tick']
 
-            current_tick = get_pool_tick(pool_id, rj)
+            current_tick = get_pool_tick(pool_id or pool_address, rj)
             alarm['last_tick'] = current_tick
 
             is_out_of_range = current_tick <= min_tick or current_tick >= max_tick
