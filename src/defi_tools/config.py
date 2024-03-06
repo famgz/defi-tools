@@ -29,19 +29,20 @@ class Config:
     '''
     FOLDER AND FILE PATHS
     '''
+
     def _core_paths(self):
         ''' Load all paths '''
         # folders paths
         self.source_dir = Path(__file__).resolve().parent
         self.config_dir = Path(self.source_dir, 'config')
-        self.data_dir   = Path(self.source_dir, 'data')
-        self.temp_dir   = Path(self.source_dir, 'temp')
-        self.bats_dir   = Path(self.source_dir, 'bats')
+        self.data_dir = Path(self.source_dir, 'data')
+        self.temp_dir = Path(self.source_dir, 'temp')
+        self.bats_dir = Path(self.source_dir, 'bats')
         self._folders = [
             self.config_dir,
-            self.data_dir  ,
-            self.temp_dir  ,
-            self.bats_dir  ,
+            self.data_dir,
+            self.temp_dir,
+            self.bats_dir,
         ]
         # json files paths
         self._path_config_json = Path(self.config_dir, 'config.json')
@@ -91,6 +92,7 @@ class Config:
                     {
                         'name': '',
                         'pool_id': '',
+                        'pool_address': '',
                         'min_tick': 0,
                         'max_tick': 0
                     }
@@ -135,6 +137,7 @@ class Config:
     '''
     WALLETS
     '''
+
     def print_wallet(self, wallet, crop=0, end='\n'):
         if wallet not in self.wallets and wallet != 'track':
             return
@@ -145,7 +148,8 @@ class Config:
         print(f'[bright_white]{name} [bright_black]{wallet}', end=end)
 
     def print_network(self, network, to_upper=True, end='\n'):
-        print(f'{self.networks[network]["color"]}{network.upper() if to_upper else network}', end=end)
+        print(
+            f'{self.networks[network]["color"]}{network.upper() if to_upper else network}', end=end)
 
     def validate_address(self, address):
         if not address:
@@ -154,7 +158,8 @@ class Config:
             address = Web3.toChecksumAddress(address)
         except ValueError:
             if not address.startswith('#'):  # ignore commented wallets
-                print(f'[yellow]Invalid wallet address: [bright_white]{address}')
+                print(
+                    f'[yellow]Invalid wallet address: [bright_white]{address}')
             address = None
         return address
 
@@ -171,7 +176,8 @@ class Config:
 
     def add_new_wallet(self):
         while True:
-            string = input('[white]Please insert new address [Empty to cancel]\n>').strip()
+            string = input(
+                '[white]Please insert new address [Empty to cancel]\n>').strip()
             if not string:
                 return
             address = self.validate_address(string)
@@ -183,7 +189,8 @@ class Config:
             comment = input('[white]Please insert address comment\n>').strip()
             self.config_json['wallets'].add({address: comment})
             self.update_json('config')
-            print(f'[white]Added wallet: [bright_white]{comment} - [bright_cyan]{address}')
+            print(
+                f'[white]Added wallet: [bright_white]{comment} - [bright_cyan]{address}')
 
 
 cfg = Config()
