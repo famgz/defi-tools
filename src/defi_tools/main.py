@@ -103,14 +103,11 @@ def get_own_pools(wallet=None, network=None, pool_id=None, pool_dict=True, to_js
 
 
 def pool_pair(pool, formatted=False):
-    tokens = [x['symbol'] for x in pool['tokens'].values()]
-    # remove gas token
-    if len(tokens) > 2:
-        gas = 'WMATIC' if pool['network'] == 'polygon' else 'WETH'
-        tokens.remove(gas)
+    [t0] = [data['symbol'] for data in pool['tokens'].values() if data['address'] == pool['token0']]
+    [t1] = [data['symbol'] for data in pool['tokens'].values() if data['address'] == pool['token1']]
     if formatted:
-        tokens = '/'.join(tokens)
-    return tokens
+        return '/'.join([t0, t1])
+    return t0, t1
 
 
 def pool_values(pool):
