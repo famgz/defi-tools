@@ -541,11 +541,13 @@ def monitor_open_pools(auto=None, include_exited=False):
             n_long = 4
             
             total = format_digits(fees["total"], n_digits=n_dol)
-            total_diff = compare_values( fees["total"], first_fees["total"], n_digits=n_dol, formatted=True )
+            # total_diff = compare_values( fees["total"], first_fees["total"], n_digits=n_dol, formatted=True )
             t0_fee = format_digits(fees["t0"], n_digits=2)
             t1_fee = format_digits(fees["t1"], n_digits=2)
             t0_diff = compare_values( fees["t0"], first_fees["t0"], n_digits=4, formatted=True )
             t1_diff = compare_values( fees["t1"], first_fees["t1"], n_digits=4, formatted=True )
+            total_diff = (fees["t0"] - first_fees["t0"]) * values['t0_price_usd_now'] + (fees["t1"] - first_fees["t1"]) * values['t1_price_usd_now']
+            total_diff = compare_values(total_diff, 0, n_digits=4, formatted=True )
 
             total_uncollected = format_digits(fees["total_uncollected"], n_digits=n_dol)
             t0_fee_uncollected = format_digits(fees["t0_uncollected"], n_digits=2)
