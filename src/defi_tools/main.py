@@ -117,7 +117,7 @@ def pool_values(pool):
     [cas] = [x for x in pool['cash_flows'] if x['type'] == 'current-amount-state']
     deposits = [x for x in pool['cash_flows'] if x['type'] == 'deposits']
     pool_price = float(pool['pool_price'])
-    has_priceless_token = not cas['prices']['token0']['usd'] or not cas['prices']['token1']['usd']
+    has_priceless_token = not (cas['prices']['token0']['usd'] and cas['prices']['token1']['usd'])
     # prices *fallback to alternative calculated values assuming at least one of tokens has valid price
     t0_price_usd_ini = float(mint['prices']['token0']['usd']) or float(
         mint['prices']['token1']['usd']) * mint['price']
@@ -314,12 +314,24 @@ def pool_gas(pool):
 def pool_fees(pool, values):
     t0 = float(pool['total_fees0'])
     t1 = float(pool['total_fees1'])
-    total = (t0 * values['t0_price_usd_now']) + (t1 * values['t1_price_usd_now']
-                                                 ) if values['has_priceless_token'] else float(pool['fees_value'])
+    total = (
+        (t0 * values["t0_price_usd_now"]) + (t1 * values["t1_price_usd_now"])
+        if values["has_priceless_token"]
+        else float(pool["fees_value"])
+    )
+    t0_uncollected = float(pool['uncollected_fees0'])
+    t1_uncollected = float(pool['uncollected_fees1'])
+    total_uncollected = (t0_uncollected * values["t0_price_usd_now"]) + (
+        t1_uncollected * values["t1_price_usd_now"]
+    )
+
     return {
         'total': total,
         't0':    t0,
         't1':    t1,
+        'total_uncollected': total_uncollected,
+        't0_uncollected':    t0_uncollected,
+        't1_uncollected':    t1_uncollected,
     }
 
 
@@ -527,34 +539,39 @@ def monitor_open_pools(auto=None, include_exited=False):
             n_dol = 2
             n_short = 2
             n_long = 4
-            total = format_digits(fees['total'], n_digits=n_dol)
-            total_diff = compare_values(
-                fees['total'], first_fees['total'], n_digits=n_dol, formatted=True)
-            t0_fee = format_digits(fees['t0'], n_digits=2)
-            t1_fee = format_digits(fees['t1'], n_digits=2)
-            t0_diff = compare_values(
-                fees['t0'], first_fees['t0'], n_digits=4, formatted=True)
-            t1_diff = compare_values(
-                fees['t1'], first_fees['t1'], n_digits=4, formatted=True)
+            
+            total = format_digits(fees["total"], n_digits=n_dol)
+            total_diff = compare_values( fees["total"], first_fees["total"], n_digits=n_dol, formatted=True )
+            t0_fee = format_digits(fees["t0"], n_digits=2)
+            t1_fee = format_digits(fees["t1"], n_digits=2)
+            t0_diff = compare_values( fees["t0"], first_fees["t0"], n_digits=4, formatted=True )
+            t1_diff = compare_values( fees["t1"], first_fees["t1"], n_digits=4, formatted=True )
+
+            total_uncollected = format_digits(fees["total_uncollected"], n_digits=n_dol)
+            t0_fee_uncollected = format_digits(fees["t0_uncollected"], n_digits=2)
+            t1_fee_uncollected = format_digits(fees["t1_uncollected"], n_digits=2)
+
+            roi_data = pool_roi(pool)
+            roi_total = format_to_percent(roi_data['roi'], symbol=False)
+            roi_per_day = format_to_percent(roi_data['per_day'], symbol=False)
+            roi_per_month = format_to_percent(roi_data['per_month'], symbol=False)
+            roi_per_year = format_to_percent(roi_data['per_year'], symbol=False)
+
             print(
                 f'[white]fees:\n'
-                f'  [white]{"TOTAL":<9}$[bright_white]{total:>8} {total_diff}\n'
-                f'  [white]{t0:<10}[bright_white]{t0_fee:>8} {t0_diff}\n'
-                f'  [white]{t1:<10}[bright_white]{t1_fee:>8} {t1_diff}'
-            )
-
-        def print_roi():
-            data = pool_roi(pool)
-            roi = format_to_percent(data['roi'], symbol=False)
-            per_day = format_to_percent(data['per_day'], symbol=False)
-            per_month = format_to_percent(data['per_month'], symbol=False)
-            per_year = format_to_percent(data['per_year'], symbol=False)
-            print(
-                f'[white]fees_roi:\n'
-                f'  [white]{"ROI":<10}[bright_white]{roi:>8}[white] %\n'
-                f'  [white]{"PER_DAY":<10}[bright_white]{per_day:>8}[white] %\n'
-                f'  [white]{"PER_MONTH":<10}[bright_white]{per_month:>8}[white] %\n'
-                f'  [white]{"PER_YEAR":<10}[bright_white]{per_year:>8}[white] %'
+                f'  [white]total:\n'
+                f'    [white]{"TOTAL":<9}$[bright_white]{total:>8} {total_diff}\n'
+                f'    [white]{t0:<10}[bright_white]{t0_fee:>8} {t0_diff}\n'
+                f'    [white]{t1:<10}[bright_white]{t1_fee:>8} {t1_diff}\n'
+                f'  [white]uncollected:\n'
+                f'    [white]{"TOTAL":<9}$[bright_white]{total_uncollected:>8}\n'
+                f'    [white]{t0:<10}[bright_white]{t0_fee_uncollected:>8}\n'
+                f'    [white]{t1:<10}[bright_white]{t1_fee_uncollected:>8}\n'
+                f'  [white]roi:\n'
+                f'    [white]{"TOTAL":<10}[bright_white]{roi_total:>8}[white] %\n'
+                f'    [white]{"PER_DAY":<10}[bright_white]{roi_per_day:>8}[white] %\n'
+                f'    [white]{"PER_MONTH":<10}[bright_white]{roi_per_month:>8}[white] %\n'
+                f'    [white]{"PER_YEAR":<10}[bright_white]{roi_per_year:>8}[white] %'
             )
 
         global t0, t1, tier, age, values, fees
@@ -572,7 +589,6 @@ def monitor_open_pools(auto=None, include_exited=False):
         print_age()
         print_tokens()
         print_fees()
-        print_roi()
 
     if auto is None:
         ...
